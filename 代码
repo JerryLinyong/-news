@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <link rel="stylesheet" href="http://at.alicdn.com/t/font_691201_pmnf63v6ongkfbt9.css">
+    <style>
+        ul {
+            width: 880px;
+            margin: auto;
+            overflow: hidden;
+            padding: 0;
+            position: relative;
+        }
+        img {
+            width: 260px;
+            margin: 5px;
+        }
+        li {
+            list-style: none;
+            width: 270px;
+            border: 1px solid grey;
+            position: absolute;
+            margin: 10px;
+        }
+        h4 {
+            margin: 5px;
+            border-bottom: 1px solid grey;
+        }
+        p {
+            margin: 5px;
+            color: grey;
+        }
+        .hide {
+            display: none;
+        }
+        .iconfont {
+            text-align: center;
+            animation: load 1s linear infinite;
+        }
+        @keyframes load{
+            from{-webkit-transform:rotate(0deg);}
+            to{-webkit-transform:rotate(360deg);}
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="ct-waterfall">
+            <ul id="pic-ct" class="ct clearfix">
+
+                    <!-- <li class="item"><a href="#" class="link"><img src="http://n.sinaimg.cn/tech/transform/200/w600h400/20180601/oqTa-hcikcev8792525.jpg" alt="1"></a>
+                        <h4 class="header">111111</h4>
+                        <p class="desp">'+item.short_intro+</p>
+                    </li>
+                    <li class="item"><a href="#" class="link"><img src="http://n.sinaimg.cn/tech/transform/200/w600h400/20180601/oqTa-hcikcev8792525.jpg" alt="1"></a>
+                        <h4 class="header">111111</h4>
+                        <p class="desp">'+item.short_intro+</p>
+                    </li>
+                    <li class="item"><a href="#" class="link"><img src="http://n.sinaimg.cn/tech/transform/200/w600h400/20180601/oqTa-hcikcev8792525.jpg" alt="1"></a>
+                        <h4 class="header">111111</h4>
+                        <p class="desp">'+item.short_intro+</p>
+                    </li> -->
+
+                <li class="item hide"></li>
+            </ul>
+            <div id="load" class="hide iconfont icon-jiazai"></div>
+        </div>
+    </div>
+
+    <script>
+        var curPage = 1
+        var perPageCount = 10
+        var colSumHeight = []
+        var nodeWidth = $ ('.item').outerWidth(true)
+        var colNumber =parseInt($('#pic-ct').width()/nodeWidth)
+        for(var i=0;i<colNumber;i++){
+            colSumHeight[i] = 0
+        }
+        var isDataArrive = true
+        function getDate(callback){
+            $.ajax({
+                url:'http://platform.sina.com.cn/slide/album_tech',
+                dataType:'jsonp',
+                jsonp:'jsoncallback',
+                data:{
+                    app_key:'1271687855',
+                    num:perPageCount,
+                    page:curPage
+                }
+            }).done(function(ret){
+                if(ret && ret.status && ret.status.code === '0'){
+                    callback(ret.data)
+                    curPage++
+                    console.log(ret.data)
+                }
+            }).fail(function(){console.log('error...')})
+        }
+        function getNode(item){
+            var tpl = ""
+                tpl += '<li class="item">'
+		        tpl += ' <a href="'+ item.url +'" class="link"><img src="' + item.img_url + '" alt="1"></a>'
+		        tpl += ' <h4 class="header">'+ item.short_name +'</h4>'
+		        tpl += '<p class="desp">'+item.short_intro+'</p>'
+                tpl += '</li>'
+                return $(tpl)
+        }
+        function waterFallPlace($node){
+            var index = 0
+            minSumheight = colSumHeight[0]
+            for(var i =0 ;i <colSumHeight.length;i++){
+                if(colSumHeight[i]<minSumheight){
+                    index = i
+                    minSumheight = colSumHeight[i]
+                }
+            }
+            $node.css({
+                left:nodeWidth*index,
+                top:minSumheight
+            })
+            colSumHeight[index]+=$node.outerHeight(true)
+            $('#pic-ct').height(Math.max.apply(null,colSumHeight))
+        }
+        function start(){
+            getDate(function(newsList){
+                isDataArrive = true
+                $.each(newsList,function(index,news){
+                    var $node = getNode(news)
+                    $node.find('img').load(function(){
+                        $('#pic-ct').append($node)
+                        waterFallPlace($node)
+                    })
+                })
+            })
+            isDataArrive = false
+        }
+        start()
+        function isVisible($el){
+            var scrollH = $(window).scrollTop(),
+                winH = $(window).height(),
+                top = $el.offset().top
+            if(top<winH+scrollH){
+                return true
+            }
+            else{return false}
+        }
+        $(window).scroll(function(){
+            if(clock){clearTimeout(clock)}
+            clock=setTimeout(check,300)
+            
+        })
+        var clock
+        function check(){
+            if(!isDataArrive) return
+            if(isVisible($('#load'))){
+                $('.iconfont').removeClass('hide')
+                start()
+            }
+            
+        }
+        
+    </script>
+</body>
+</html>
